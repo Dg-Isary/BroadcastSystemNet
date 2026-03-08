@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title data-i18n="page_title">广播播放系统</title>
+    <link rel="icon" type="image/svg+xml" href="/res/favicon.svg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            background: #f4f6f8;
+            height: 100vh;
+            overflow: hidden;
+            color: #2c3e50;
+            display: flex;
+            flex-direction: column;
+        }
+
+        button, input, select, textarea {
+            font-family: inherit;
+        }
+
+        .topbar {
+            background: #ffffff;
+            color: #2c3e50;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            z-index: 10;
+        }
+
+            .topbar h2 {
+                margin: 0;
+                font-size: 1.5rem;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                font-weight: 600;
+            }
+
+        .topbar-controls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .btn-topbar {
+            background: #f0f2f5;
+            color: #2c3e50;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+            .btn-topbar:hover {
+                background: #e4e6e9;
+            }
+
+        .power-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+        }
+
+        .power-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 6px rgba(231, 76, 60, 0.3);
+            transition: all 0.3s;
+            outline: none;
+        }
+
+            .power-btn.active {
+                background: #2ecc71;
+                box-shadow: 0 4px 12px rgba(46, 204, 113, 0.4);
+            }
+
+            .power-btn:hover {
+                transform: scale(1.05);
+            }
+
+        .dashboard {
+            display: flex;
+            gap: 25px;
+            padding: 20px 30px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .panel {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            border: 1px solid #edf2f7;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+            .panel h3 {
+                margin-top: 0;
+                color: #34495e;
+                padding-bottom: 12px;
+                border-bottom: 2px solid #f4f6f8;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                margin-bottom: 12px;
+                flex-shrink: 0;
+            }
+
+        .table-container {
+            flex: 1;
+            overflow-y: auto;
+            border-radius: 8px;
+            border: 1px solid #edf2f7;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            background: #f8f9fa;
+            padding: 12px 15px;
+            border-bottom: 2px solid #edf2f7;
+            text-align: left;
+            color: #7f8c8d;
+            font-weight: 600;
+            z-index: 2;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f4f6f8;
+            vertical-align: middle;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #fafbfc;
+        }
+
+        tbody tr:nth-child(odd) {
+            background-color: #ffffff;
+        }
+
+        tbody tr:hover td {
+            background-color: #f1f4f6 !important;
+        }
+
+        #dailyTimeline {
+            height: 26px;
+            background: #e2e6ea;
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+            border-top: 1px solid #ced6e0;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .timeline-event {
+            position: absolute;
+            height: 100%;
+            top: 0;
+            border-radius: 3px;
+            opacity: 0.9;
+            transition: opacity 0.2s, transform 0.2s, left 1s linear, width 1s linear;
+        }
+
+            .timeline-event:hover {
+                opacity: 1;
+                z-index: 10;
+                transform: scaleY(1.15);
+                box-shadow: 0 0 6px rgba(0,0,0,0.3);
+            }
+
+        .system-footer {
+            background: #00a8ff;
+            color: #ffffff;
+            padding: 8px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95em;
+            flex-shrink: 0;
+            box-shadow: 0 -2px 10px rgba(0,168,255,0.2);
+        }
+
+        .footer-left {
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .footer-right {
+            display: flex;
+            gap: 20px;
+            font-family: "Consolas", "Courier New", monospace;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(244, 246, 248, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-box {
+            background: #ffffff;
+            padding: 30px 30px 0 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 480px;
+            text-align: center;
+            border: 1px solid #edf2f7;
+            animation: slideIn 0.3s ease-out;
+            outline: none;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+            .modal-box.large {
+                max-width: 850px;
+                text-align: left;
+                max-height: 90vh;
+            }
+
+        .modal-content-area {
+            overflow-y: auto;
+            padding-bottom: 20px;
+            flex: 1;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            background: #f8f9fa;
+            padding: 15px 30px;
+            margin: 0 -30px;
+            border-top: 1px solid #edf2f7;
+            border-radius: 0 0 16px 16px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            outline: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+            .btn-primary:hover {
+                background: #2980b9;
+            }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+            .btn-danger:hover {
+                background: #c0392b;
+            }
+
+        .btn-success {
+            background: #2ecc71;
+            color: white;
+        }
+
+            .btn-success:hover {
+                background: #27ae60;
+            }
+
+        .btn-cancel {
+            background: #ecf0f1;
+            color: #7f8c8d;
+        }
+
+            .btn-cancel:hover {
+                background: #bdc3c7;
+                color: #2c3e50;
+            }
+
+        .input-text, select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #ecf0f1;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1rem;
+            transition: border 0.2s;
+            outline: none;
+            background: #fff;
+            font-family: inherit;
+        }
+
+            .input-text:focus, select:focus {
+                border-color: #3498db;
+            }
+
+            .input-text.no-arrow {
+                -moz-appearance: textfield;
+                text-align: center;
+            }
+
+                .input-text.no-arrow::-webkit-inner-spin-button, .input-text.no-arrow::-webkit-outer-spin-button {
+                    -webkit-appearance: none;
+                    margin: 0;
+                }
+
+        .time-input {
+            width: 45px;
+            text-align: center;
+            border: 1px dashed transparent;
+            background: transparent;
+            font-weight: bold;
+            font-size: 1.2em;
+            padding: 2px 0;
+            outline: none;
+            -moz-appearance: textfield;
+            transition: border 0.2s;
+            border-radius: 4px;
+            color: #2c3e50;
+            font-family: "Consolas", "Courier New", monospace;
+        }
+
+            .time-input:hover, .time-input:focus {
+                border-color: #3498db;
+                background: #fff;
+            }
+
+            .time-input::-webkit-inner-spin-button, .time-input::-webkit-outer-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+            }
+
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+            .form-group label {
+                display: block;
+                font-weight: 600;
+                margin-bottom: 8px;
+                color: #34495e;
+                font-size: 0.95em;
+            }
+
+        .days-container, .time-input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #edf2f7;
+            flex-wrap: wrap;
+        }
+
+        .time-btn {
+            background: #fff;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            padding: 4px 8px;
+            cursor: pointer;
+            color: #7f8c8d;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+            .time-btn:hover {
+                background: #3498db;
+                color: #fff;
+                border-color: #3498db;
+            }
+
+        .btn-music-avail {
+            margin: 4px;
+            padding: 6px 14px;
+            border: 1px solid #2ecc71;
+            background: transparent;
+            color: #2ecc71;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.2s;
+        }
+
+            .btn-music-avail:hover {
+                background: #2ecc71;
+                color: white;
+            }
+
+        .btn-music-sel {
+            margin: 4px;
+            padding: 6px 14px;
+            border: none;
+            background: #3498db;
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.2s;
+        }
+
+            .btn-music-sel:hover {
+                background: #e74c3c;
+            }
+
+        .music-selection-box {
+            padding: 12px;
+            border: 1px dashed #bdc3c7;
+            border-radius: 8px;
+            min-height: 40px;
+            background: #f8f9fa;
+        }
+
+        .music-selected-box {
+            padding: 12px;
+            border: 1px solid #3498db;
+            border-radius: 8px;
+            min-height: 40px;
+            background: #ebf5fb;
+            margin-top: 5px;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            margin: 8px 0;
+        }
+
+            input[type=range]:focus {
+                outline: none;
+            }
+
+            input[type=range]::-webkit-slider-runnable-track {
+                width: 100%;
+                height: 6px;
+                cursor: pointer;
+                background: #bdc3c7;
+                border-radius: 3px;
+            }
+
+            input[type=range]::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                height: 16px;
+                width: 16px;
+                border-radius: 50%;
+                background: #3498db;
+                cursor: pointer;
+                margin-top: -5px;
+            }
+
+        .play-item {
+            padding: 6px 10px;
+            border-bottom: 1px solid #edf2f7;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 6px;
+            margin-bottom: 2px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+            .play-item:hover {
+                background: #e8f4fd;
+            }
+
+            .play-item.active {
+                background: #3498db;
+                color: white;
+                font-weight: bold;
+            }
+
+                .play-item.active .rm-btn {
+                    color: white;
+                }
+
+        .play-item-title {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            padding: 4px 0;
+        }
+
+        .rm-btn {
+            background: none;
+            border: none;
+            color: #e74c3c;
+            cursor: pointer;
+            padding: 4px 8px;
+            margin-left: 10px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+            .rm-btn:hover {
+                background: rgba(231, 76, 60, 0.1);
+                transform: scale(1.1);
+            }
+    </style>
+</head>
+<body>
+
+    <script>
+        const originalFetch = window.fetch;
+        let isAuthenticating = false;
+        let authPromise = null;
+
+        function showBeautifulPasswordPrompt() {
+            return new Promise((resolve) => {
+                const overlay = document.createElement('div');
+                overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.4);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:99999;display:flex;justify-content:center;align-items:center;opacity:0;transition:opacity 0.3s ease;';
+
+                const modal = document.createElement('div');
+                modal.style.cssText = 'background:#ffffff;padding:35px 30px;border-radius:16px;box-shadow:0 20px 40px rgba(0,0,0,0.2);width:320px;text-align:center;font-family:"Microsoft YaHei",sans-serif;transform:translateY(30px);transition:all 0.3s cubic-bezier(0.175,0.885,0.32,1.275);';
+
+                const icon = document.createElement('div');
+                icon.innerHTML = '<i class="fa-solid fa-shield-halved"></i>';
+                icon.style.cssText = 'font-size:45px;color:#3498db;margin-bottom:15px;';
+
+                const title = document.createElement('h3');
+                title.innerText = '访问受限';
+                title.style.cssText = 'margin:0 0 8px 0;color:#2c3e50;font-size:22px;letter-spacing:1px;';
+
+                const desc = document.createElement('p');
+                desc.innerText = '该操作受保护，请输入管理员密码';
+                desc.style.cssText = 'font-size:14px;color:#7f8c8d;margin-bottom:25px;';
+
+                const input = document.createElement('input');
+                input.type = 'password';
+                input.placeholder = '输入密码以继续...';
+                input.style.cssText = 'width:100%;padding:12px 15px;margin-bottom:20px;border:2px solid #ecf0f1;border-radius:8px;box-sizing:border-box;font-size:16px;outline:none;transition:border 0.3s ease,box-shadow 0.3s ease;';
+                input.onfocus = () => { input.style.border = '2px solid #3498db'; input.style.boxShadow = '0 0 8px rgba(52,152,219,0.3)'; };
+                input.onblur = () => { input.style.border = '2px solid #ecf0f1'; input.style.boxShadow = 'none'; };
+
+                const btn = document.createElement('button');
+                btn.innerText = '认 证 授 权';
+                btn.style.cssText = 'width:100%;padding:14px;background:linear-gradient(135deg, #3498db, #2980b9);color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;transition:transform 0.1s,box-shadow 0.3s;box-shadow:0 4px 15px rgba(52,152,219,0.4);';
+                btn.onmousedown = () => btn.style.transform = 'scale(0.98)';
+                btn.onmouseup = () => btn.style.transform = 'scale(1)';
+
+                const closeBtn = document.createElement('div');
+                closeBtn.innerText = '取消操作';
+                closeBtn.style.cssText = 'margin-top:15px;font-size:14px;color:#bdc3c7;cursor:pointer;transition:color 0.3s;';
+                closeBtn.onmouseover = () => closeBtn.style.color = '#7f8c8d';
+                closeBtn.onmouseout = () => closeBtn.style.color = '#bdc3c7';
+
+                modal.appendChild(icon); modal.appendChild(title); modal.appendChild(desc);
+                modal.appendChild(input); modal.appendChild(btn); modal.appendChild(closeBtn);
+                overlay.appendChild(modal); document.body.appendChild(overlay);
+
+                requestAnimationFrame(() => {
+                    overlay.style.opacity = '1';
+                    modal.style.transform = 'translateY(0)';
+                    input.focus();
+                });
+
+                const closeAuth = (val) => {
+                    overlay.style.opacity = '0';
+                    modal.style.transform = 'translateY(20px)';
+                    setTimeout(() => {
+                        if (document.body.contains(overlay)) document.body.removeChild(overlay);
+                        resolve(val);
+                    }, 300);
+                };
+
+                closeBtn.onclick = () => closeAuth(null);
+                const submitAction = () => { if (input.value) { btn.innerText = '验证中...'; closeAuth(input.value); } };
+                btn.onclick = submitAction;
+                input.onkeydown = (e) => { if (e.key === 'Enter') submitAction(); };
+            });
+        }
+
+        window.fetch = async function (...args) {
+            let [resource, config] = args;
+            config = config || {};
+
+            if (typeof resource === 'string' && resource.startsWith('/api/')) {
+                if (!config.headers) config.headers = {};
+                let token = localStorage.getItem('sys_token');
+                if (token) config.headers['Authorization'] = 'Bearer ' + token;
+            }
+
+            let response = await originalFetch(resource, config);
+
+            if (response.status === 401 && resource !== '/api/login') {
+                if (!isAuthenticating) {
+                    isAuthenticating = true;
+                    authPromise = new Promise(async (resolve) => {
+                        let pwd = await showBeautifulPasswordPrompt();
+
+                        if (pwd !== null) {
+                            let loginRes = await originalFetch('/api/login', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ password: pwd })
+                            });
+
+                            if (loginRes.ok) {
+                                let data = await loginRes.json();
+                                localStorage.setItem('sys_token', data.token);
+                                resolve(true);
+                            } else {
+                                alert("密码错误，访问被拒绝");
+                                resolve(false);
+                            }
+                        } else {
+                            resolve(false);
+                        }
+                        isAuthenticating = false;
+                    });
+                }
+
+                let success = await authPromise;
+                if (success) {
+                    if (!config.headers) config.headers = {};
+                    config.headers['Authorization'] = 'Bearer ' + localStorage.getItem('sys_token');
+                    return await originalFetch(resource, config);
+                }
+            }
+            return response;
+        };
+    </script>
+
+    <div class="topbar">
+        <h2>
+            <img src="/res/favicon.svg" alt="Logo" style="width: 28px; height: 28px;">
+            <span data-i18n="page_title">广播播放系统</span>
+        </h2>
+        <div class="topbar-controls">
+            <button class="btn-topbar" onclick="toggleLanguage()"><i class="fa-solid fa-language"></i> <span id="langText">English</span></button>
+            <button class="btn-topbar" onclick="openSystemSettingsModal()"><i class="fa-solid fa-gear"></i> <span data-i18n="sys_settings">系统设置</span></button>
+            <button class="btn-topbar" onclick="openTiaoxiuModal()"><i class="fa-solid fa-calendar-day"></i> <span data-i18n="holiday_mgr">调休管理</span></button>
+            <div class="power-wrapper">
+                <span id="globalSwitchText" data-i18n="sys_off">系统停用</span>
+                <button id="powerSwitch" class="power-btn" onclick="handlePowerClick(event)">
+                    <i class="fa-solid fa-power-off"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard">
+        <div class="panel" style="flex: 5; min-width: 400px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 2px solid #f4f6f8; margin-bottom: 12px; flex-shrink: 0;">
+                <h3 style="margin:0; border:none; padding:0;"><i class="fa-solid fa-list-check"></i> <span data-i18n="task_list">任务排程表</span></h3>
+                <div>
+                    <button class="btn btn-success" onclick="openModal()"><i class="fa-solid fa-plus"></i> <span data-i18n="add_task">新增任务</span></button>
+                    <button class="btn btn-primary" onclick="initData()"><i class="fa-solid fa-rotate"></i> <span data-i18n="refresh">刷新</span></button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 40px; text-align: center;">#</th>
+                            <th data-i18n="col_time">时间排布</th>
+                            <th data-i18n="col_duration">播放时长</th>
+                            <th data-i18n="col_cycle">周期/覆盖</th>
+                            <th data-i18n="col_content">播放内容</th>
+                            <th data-i18n="col_details">详细参数</th>
+                            <th data-i18n="col_action" style="width: 100px;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="taskTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div style="flex: 2.5; min-width: 360px; display: flex; flex-direction: column; gap: 20px;">
+            <div class="panel" style="flex: 1; flex-basis: 180px;">
+                <h3><i class="fa-solid fa-wave-square"></i> <span data-i18n="live_status">实时波形</span></h3>
+                <div style="flex: 1; position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                    <div style="width:100%; height: 100%;">
+                        <canvas id="waveformChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel" style="flex: 1; flex-basis: 250px;">
+                <h3 style="margin-bottom: 8px;"><i class="fa-solid fa-gamepad"></i> <span data-i18n="manual_controller">手动播控中心</span></h3>
+                <div id="manualPlaylist" style="flex: 1; overflow-y: auto; background: #ffffff; border-radius: 8px; padding: 8px; margin-bottom: 5px; border: 1px solid #edf2f7; font-size: 0.9em;"></div>
+
+                <div id="mpProgressContainer" style="display:none; margin: 0 5px 10px 5px; flex-direction: column; gap: 2px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.75em; color: #7f8c8d; font-family: 'Consolas', 'Courier New', monospace; padding: 0 2px;">
+                        <span id="mpElapsed">00:00</span>
+                        <span id="mpDuration">00:00</span>
+                    </div>
+                    <input type="range" id="mpProgressBar" min="0" max="100" value="0" step="0.1" style="margin: 0;">
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; border: 1px solid #edf2f7; padding: 10px 15px; border-radius: 25px; flex-shrink: 0;">
+                    <button class="btn btn-primary" onclick="openManualAddModal()" style="padding: 8px; border-radius: 50%; width: 38px; height: 38px; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-plus"></i></button>
+
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <button class="btn btn-cancel" onclick="manualCmd('prev')" style="padding: 8px; border-radius: 50%; width: 36px; height: 36px; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-backward-step"></i></button>
+                        <button class="btn btn-success" id="mpPlayBtn" onclick="manualCmd('play')" style="padding: 8px; border-radius: 50%; width: 44px; height: 44px; display:flex; align-items:center; justify-content:center; font-size: 1.1em; box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);"><i class="fa-solid fa-play"></i></button>
+                        <button class="btn btn-danger" onclick="manualCmd('stop')" style="padding: 8px; border-radius: 50%; width: 36px; height: 36px; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-stop"></i></button>
+                        <button class="btn btn-cancel" onclick="manualCmd('next')" style="padding: 8px; border-radius: 50%; width: 36px; height: 36px; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-forward-step"></i></button>
+                    </div>
+
+                    <button class="btn btn-cancel" id="mpModeBtn" onclick="manualCmd('mode')" style="padding: 8px; border-radius: 50%; width: 38px; height: 38px; display:flex; align-items:center; justify-content:center;">
+                        <i class="fa-solid fa-arrow-down-short-wide"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="dailyTimeline"></div>
+
+    <div class="system-footer">
+        <div class="footer-left" id="footer-left"><i class="fa-solid fa-stop"></i> 待机中...</div>
+        <div class="footer-right" id="footer-right">
+            <span><i class="fa-solid fa-microchip"></i> CPU: 0.0%</span>
+            <span><i class="fa-solid fa-memory"></i> RAM: 0.0%</span>
+        </div>
+    </div>
+
+    <div id="sysDialog" class="modal-overlay" style="z-index: 3000;">
+        <div class="modal-box">
+            <div class="modal-content-area" style="padding-top: 10px;">
+                <div class="modal-title" id="sysDialogTitle">提示</div>
+                <div class="modal-message" id="sysDialogMsg">消息内容</div>
+            </div>
+            <div class="modal-actions">
+                <button id="sysDialogCancel" class="btn btn-cancel" onclick="closeSysDialog()" data-i18n="btn_cancel">取消</button>
+                <button id="sysDialogConfirm" class="btn btn-primary" data-i18n="btn_confirm">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="settingsModal" class="modal-overlay" onkeydown="if(event.key === 'Enter') { event.preventDefault(); saveGlobalSettings(); }">
+        <div class="modal-box" tabindex="0" style="padding-bottom: 0;">
+            <div class="modal-content-area">
+                <div class="modal-title"><i class="fa-solid fa-gear"></i> <span data-i18n="sys_settings_title">全局系统配置</span></div>
+
+                <div class="form-group" style="margin-top:20px; padding-bottom: 15px;">
+                    <label data-i18n="set_pwd_title">安全锁密码</label>
+                    <input type="password" id="newPassword" class="input-text" data-i18n-ph="enter_new_pwd" placeholder="输入以修改密码 (留空则保持原密码不变)">
+                    <div style="margin-top: 10px; display: flex; align-items: center; gap: 5px;">
+                        <input type="checkbox" id="clearPwdCheck"> <label for="clearPwdCheck" style="margin:0; font-weight: normal; color:#e74c3c; cursor:pointer;" data-i18n="clear_pwd">强制抹除旧密码</label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeModals()" data-i18n="btn_cancel">取消</button>
+                <button class="btn btn-primary" onclick="saveGlobalSettings()" data-i18n="btn_save">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="tiaoxiuModal" class="modal-overlay">
+        <div class="modal-box large" style="padding-bottom: 0;">
+            <div class="modal-content-area">
+                <div class="modal-title"><i class="fa-solid fa-calendar-day"></i> <span data-i18n="holiday_mgr">调休与特殊日期管理</span></div>
+                <div class="form-group days-container">
+                    <input type="date" id="txDate" class="input-text" style="margin:0; width: 140px; cursor: pointer;" onclick="this.showPicker()">
+                    <input type="number" id="txMarker" class="input-text no-arrow" style="margin:0; width:60px;" placeholder="标记" value="0" min="0" max="10" onwheel="handleWheel(event, this, 10, 0)">
+                    <select id="txAction" class="input-text" style="margin:0; width:80px;">
+                        <option value="disable">禁用</option>
+                        <option value="enable">启用</option>
+                    </select>
+                    <input type="text" id="txNote" class="input-text" style="margin:0; flex:1;" data-i18n-ph="note_ph" placeholder="例如：劳动节调休补班" onkeypress="if(event.key==='Enter') addTiaoxiuRecord()">
+                    <button class="btn btn-success" onclick="addTiaoxiuRecord()"><i class="fa-solid fa-plus"></i> <span data-i18n="btn_add">添加</span></button>
+                </div>
+                <div class="table-container" style="max-height: 300px; min-height: unset;">
+                    <table>
+                        <thead><tr><th>日期</th><th>标记</th><th>动作</th><th>备注</th><th>来源</th><th style="width: 60px;">操作</th></tr></thead>
+                        <tbody id="tiaoxiuTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeModals()" data-i18n="btn_close">关闭</button>
+                <button class="btn btn-primary" onclick="saveTiaoxiu()" data-i18n="btn_save">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="taskModal" class="modal-overlay" onkeydown="if(event.key === 'Enter' && event.target.tagName !== 'TEXTAREA') { event.preventDefault(); saveTask(); }">
+        <div class="modal-box large" tabindex="0" style="padding-bottom: 0;">
+            <div class="modal-content-area">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f4f6f8; padding-bottom: 15px;">
+                    <div class="modal-title" id="modalTitle" style="margin-bottom: 0;">编辑任务</div>
+                </div>
+                <input type="hidden" id="taskId">
+
+                <div class="form-group" style="display: flex; gap: 20px; align-items: flex-start;">
+                    <div style="flex: 1;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <label style="margin-bottom: 0;" data-i18n="col_time">播放时间 (悬停数字并滚动滚轮)</label>
+                            <button type="button" class="btn btn-primary" style="padding: 4px 10px; font-size: 0.8em;" onclick="setNowTime()"><i class="fa-solid fa-clock"></i> <span data-i18n="btn_now">当前时间</span></button>
+                        </div>
+                        <div class="time-input-wrapper" style="justify-content: center;">
+                            <button type="button" class="time-btn" onclick="adjustTime(-40)">-40m</button>
+                            <button type="button" class="time-btn" onclick="adjustTime(-5)">-5m</button>
+                            <div style="display:flex; align-items:center;">
+                                <input type="number" id="st_h" class="time-input" min="0" max="23" onwheel="handleWheel(event, this, 23)"> <span style="font-weight:bold;">:</span>
+                                <input type="number" id="st_m" class="time-input" min="0" max="59" onwheel="handleWheel(event, this, 59)"> <span style="font-weight:bold;">:</span>
+                                <input type="number" id="st_s" class="time-input" min="0" max="59" onwheel="handleWheel(event, this, 59)">
+                            </div>
+                            <button type="button" class="time-btn" onclick="adjustTime(5)">+5m</button>
+                            <button type="button" class="time-btn" onclick="adjustTime(40)">+40m</button>
+                        </div>
+                    </div>
+
+                    <div style="flex: 1;">
+                        <label data-i18n="lbl_duration_limit" style="margin-bottom: 8px; margin-top: 6px;">限制播放时长 (0 表示不限制)</label>
+                        <div class="time-input-wrapper" style="justify-content: center;">
+                            <button type="button" class="time-btn" onclick="adjustDuration(-600)">-10m</button>
+                            <button type="button" class="time-btn" onclick="adjustDuration(-1)">-1s</button>
+                            <div style="display:flex; align-items:center;">
+                                <input type="number" id="dur_m" class="time-input" min="0" onwheel="handleWheel(event, this, 999)"> <span style="font-weight:bold;">:</span>
+                                <input type="number" id="dur_s" class="time-input" min="0" max="59" onwheel="handleWheel(event, this, 59)">
+                            </div>
+                            <button type="button" class="time-btn" onclick="adjustDuration(1)">+1s</button>
+                            <button type="button" class="time-btn" onclick="adjustDuration(600)">+10m</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label data-i18n="lbl_cycle">常规播放周期 (星期)</label>
+                    <div class="days-container" id="daysGroup">
+                        <label><input type="checkbox" value="1"> <span data-i18n="w1">周一</span></label>
+                        <label><input type="checkbox" value="2"> <span data-i18n="w2">周二</span></label>
+                        <label><input type="checkbox" value="3"> <span data-i18n="w3">周三</span></label>
+                        <label><input type="checkbox" value="4"> <span data-i18n="w4">周四</span></label>
+                        <label><input type="checkbox" value="5"> <span data-i18n="w5">周五</span></label>
+                        <label><input type="checkbox" value="6"> <span data-i18n="w6">周六</span></label>
+                        <label><input type="checkbox" value="7"> <span data-i18n="w7">周日</span></label>
+                    </div>
+                </div>
+
+                <div class="form-group" style="display: flex; gap: 25px; align-items: stretch; background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #edf2f7;">
+                    <div style="flex: 1; display: flex; flex-direction: column;">
+                        <label><span data-i18n="lbl_specific_dates">特殊覆盖日期</span> <span style="font-weight:normal; font-size:0.85em; color:#7f8c8d;">(换行或逗号分隔)</span></label>
+                        <textarea id="specific_dates" class="input-text" style="flex: 1; min-height: 80px;" placeholder="2026-05-01&#10;2026-05-02"></textarea>
+                    </div>
+                    <div style="flex: 1.5; display: flex; flex-direction: column; gap: 15px; justify-content: space-between;">
+                        <div style="display: flex; gap: 10px;">
+                            <div style="flex: 1;">
+                                <label data-i18n="lbl_seq_mode">总列队模式</label>
+                                <select id="sequence_mode"><option value="sequential" data-i18n="opt_seq">顺序播放</option><option value="random" data-i18n="opt_rand">随机打乱</option></select>
+                            </div>
+                            <div style="flex: 1;">
+                                <label data-i18n="lbl_folder_mode">文件夹内模式</label>
+                                <select id="folder_mode"><option value="sequential" data-i18n="opt_folder_seq">顺序 (断点接续)</option><option value="random" data-i18n="opt_rand">随机播放</option></select>
+                            </div>
+                            <div>
+                                <label data-i18n="lbl_folder_count">单次提歌数</label>
+                                <input type="number" id="folder_play_count" class="input-text no-arrow" style="width: 80px; padding: 10px 12px; margin-bottom: 0;" value="1" min="1" onwheel="handleWheel(event, this, 99, 1)">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label data-i18n="lbl_music_sel">音乐选择</label>
+                    <div id="available_music_container" class="music-selection-box"></div>
+                    <label style="margin-top: 15px;"><span data-i18n="lbl_music_selected">已选播放序列</span> <span style="font-weight:normal; color:#e74c3c; font-size:0.9em;" data-i18n="lbl_click_remove">(点击即可移除)</span></label>
+                    <div id="selected_music_container" class="music-selected-box"></div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label data-i18n="lbl_tx_marker">调休监听标记 (1-10绑定翻转)</label>
+                    <input type="number" id="tiaoxiu_marker" class="input-text no-arrow" style="width: 100px; padding: 10px 12px; margin-bottom: 0;" value="1" min="1" max="10" onwheel="handleWheel(event, this, 10, 1)">
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-cancel" onclick="closeModals()" data-i18n="btn_cancel">取消</button>
+                <button type="button" class="btn btn-primary" onclick="saveTask()" data-i18n="btn_save_task">保存设定</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="manualAddModal" class="modal-overlay">
+        <div class="modal-box large" style="padding-bottom: 0;">
+            <div class="modal-content-area">
+                <div class="modal-title">添加入播放列表</div>
+                <div class="modal-message" style="text-align: left;">点击下方配置库中的资源，即可将其临时推入控制器。若点选文件夹，系统将自动展开其内部所有文件。</div>
+                <div id="manual_add_container" class="music-selection-box"></div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeModals()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const translations = {
+            zh: {
+                page_title: "广播播放系统",
+                sys_settings: "系统设置", sys_settings_title: "全局系统配置", holiday_mgr: "调休管理", sys_off: "系统停用", sys_on: "系统运行中",
+                task_list: "任务排程表", add_task: "新增任务", refresh: "刷新", live_status: "实时波形", standby: "系统监听待机中...", active: "音频通道激活中...",
+                manual_controller: "手动播控中心",
+                col_time: "时间排布", col_duration: "时长", col_cycle: "周期/覆盖", col_content: "播放内容", col_details: "详细参数", col_action: "操作",
+                btn_cancel: "取消", btn_confirm: "确认", btn_save: "保存", btn_save_task: "保存设定", btn_close: "关闭", btn_add: "添加", note_ph: "例如：劳动节补班...",
+                set_pwd_title: "安全锁密码", btn_now: "当前时间",
+                confirm_power_on: "确认要启动全局广播系统吗？", confirm_power_off: "确认要紧急切断并停用广播系统吗？", delete_confirm: "确认要删除此记录吗？",
+                edit_task: "编辑任务", lbl_duration_limit: "限制播放时长 (0 表示不限制)", lbl_cycle: "常规播放周期 (星期)",
+                w1: "一", w2: "二", w3: "三", w4: "四", w5: "五", w6: "六", w7: "日",
+                lbl_seq_mode: "列队模式", lbl_folder_mode: "文件夹模式", opt_seq: "顺序播放", opt_rand: "随机打乱", opt_folder_seq: "顺序(接续上次)",
+                lbl_folder_count: "提歌数", lbl_music_sel: "音乐选择库", lbl_music_selected: "已选序列", lbl_click_remove: "(点击移除)", lbl_tx_marker: "调休监听标记 (1-10绑定翻转)"
+            },
+            en: {
+                page_title: "Broadcast System",
+                sys_settings: "Sys Settings", sys_settings_title: "Global Configuration", holiday_mgr: "Holidays", sys_off: "System OFF", sys_on: "System ON",
+                task_list: "Task Schedule", add_task: "Add Task", refresh: "Refresh", live_status: "Live Waveform", standby: "System Standby...", active: "Audio Channel Active...",
+                manual_controller: "Manual Controller",
+                col_time: "Timeline", col_duration: "Duration", col_cycle: "Days/Dates", col_content: "Content", col_details: "Details", col_action: "Action",
+                btn_cancel: "Cancel", btn_confirm: "Confirm", btn_save: "Save", btn_save_task: "Save Task", btn_close: "Close", btn_add: "Add", note_ph: "e.g. Makeup workday...",
+                set_pwd_title: "Security Password", btn_now: "Now",
+                confirm_power_on: "Are you sure you want to enable the broadcast system?", confirm_power_off: "Emergency override: Disable the broadcast system?", delete_confirm: "Are you sure you want to delete this?",
+                edit_task: "Edit Task", lbl_duration_limit: "Limit Duration (0 = unlimited)", lbl_cycle: "Regular Playback Cycle",
+                w1: "M", w2: "T", w3: "W", w4: "T", w5: "F", w6: "S", w7: "S",
+                lbl_seq_mode: "Queue Mode", lbl_folder_mode: "Folder Mode", opt_seq: "Sequential", opt_rand: "Random", opt_folder_seq: "Seq(Resume)",
+                lbl_folder_count: "Extract", lbl_music_sel: "Available Music", lbl_music_selected: "Selected Queue", lbl_click_remove: "(Click remove)", lbl_tx_marker: "Holiday Marker (1-10)"
+            }
+        };
+
+        let currentLang = 'zh';
+        function setLanguage(lang) {
+            currentLang = lang; document.getElementById('langText').innerText = lang === 'zh' ? 'English' : '中文';
+            document.querySelectorAll('[data-i18n]').forEach(el => { el.innerText = translations[lang][el.getAttribute('data-i18n')] || el.innerText; });
+            document.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = translations[lang][el.getAttribute('data-i18n-ph')] || el.placeholder; });
+            updatePowerButtonUI(document.getElementById('powerSwitch').classList.contains('active'));
+            loadTasks();
+        }
+        function toggleLanguage() { setLanguage(currentLang === 'zh' ? 'en' : 'zh'); }
+
+        let currentTasks = [], currentTiaoxiuRecords = [], musicMap = {}, tempSelectedMusicIds = [], globalSwitchState = true;
+        let lastUsedStartTime = { h: "08", m: "00", s: "00" };
+        let rawMusicData = [];
+
+        let isDraggingProgress = false;
+
+        let lastFooterLeftHtml = "";
+        let lastFooterRightHtml = "";
+        let lastPlaylistHtml = "";
+        let lastPlayBtnHtml = "";
+        let lastModeBtnHtml = "";
+        let lastTimelineHtml = "";
+        let lastRenderSec = -1;
+
+        let sysDialogCallback = null;
+        function uiConfirm(title, message, onConfirm) { document.getElementById('sysDialogTitle').innerText = title; document.getElementById('sysDialogMsg').innerText = message; document.getElementById('sysDialogCancel').style.display = 'inline-flex'; document.getElementById('sysDialog').style.display = 'flex'; sysDialogCallback = onConfirm; }
+        function uiAlert(title, message) { document.getElementById('sysDialogTitle').innerText = title; document.getElementById('sysDialogMsg').innerText = message; document.getElementById('sysDialogCancel').style.display = 'none'; document.getElementById('sysDialog').style.display = 'flex'; sysDialogCallback = null; }
+        function closeSysDialog() { document.getElementById('sysDialog').style.display = 'none'; }
+        document.getElementById('sysDialogConfirm').addEventListener('click', () => { closeSysDialog(); if (sysDialogCallback) sysDialogCallback(); });
+        function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => { if (m.id !== 'sysDialog') m.style.display = 'none'; }); }
+
+        // [核心修复] 取消第一屏登录逻辑，直接拉取数据加载界面。如果后端没授权，全屏拦截器自会弹窗拦截
+        async function checkSecurityOnLoad() {
+            const res = await fetch('/api/settings');
+            const data = await res.json();
+            globalSwitchState = data.global_switch;
+            updatePowerButtonUI(globalSwitchState);
+            initData();
+        }
+
+        async function openSystemSettingsModal() {
+            const res = await fetch('/api/settings'); const data = await res.json();
+            document.getElementById('newPassword').value = '';
+            document.getElementById('clearPwdCheck').checked = false;
+            document.getElementById('settingsModal').style.display = 'flex';
+            document.getElementById('settingsModal').querySelector('.modal-box').focus();
+        }
+
+        async function saveGlobalSettings() {
+            const newPwd = document.getElementById('newPassword').value.trim();
+            let payload = {};
+            if (newPwd !== "") payload.password = newPwd;
+            else if (document.getElementById('clearPwdCheck').checked) payload.password = "";
+
+            await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            closeModals();
+            uiAlert("Success", "全局设置已保存");
+        }
+
+        function updatePowerButtonUI(isActive) {
+            const btn = document.getElementById('powerSwitch'); const text = document.getElementById('globalSwitchText');
+            if (isActive) { btn.classList.add('active'); text.innerText = translations[currentLang].sys_on; text.style.color = "#2ecc71"; }
+            else { btn.classList.remove('active'); text.innerText = translations[currentLang].sys_off; text.style.color = "#e74c3c"; }
+        }
+        function handlePowerClick(e) {
+            e.preventDefault(); const targetState = !globalSwitchState;
+            uiConfirm("System Action", targetState ? translations[currentLang].confirm_power_on : translations[currentLang].confirm_power_off, async () => {
+                globalSwitchState = targetState; updatePowerButtonUI(globalSwitchState);
+                await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ global_switch: globalSwitchState }) });
+            });
+        }
+
+        const ctx = document.getElementById('waveformChart').getContext('2d');
+        const waveformChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Array.from({ length: 200 }, (_, i) => i),
+                datasets: [{
+                    data: Array(200).fill(0),
+                    borderColor: '#3498db',
+                    borderWidth: 1.5,
+                    fill: true,
+                    backgroundColor: 'rgba(52, 152, 219, 0.15)',
+                    tension: 0.1,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { min: -100, max: 100, display: false }, x: { display: false } },
+                animation: false
+            }
+        });
+
+        function formatTime(sec) {
+            if (isNaN(sec) || sec < 0) return "00:00";
+            let m = Math.floor(sec / 60).toString().padStart(2, '0');
+            let s = Math.floor(sec % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        const pBar = document.getElementById('mpProgressBar');
+        pBar.addEventListener('mousedown', () => isDraggingProgress = true);
+        pBar.addEventListener('touchstart', () => isDraggingProgress = true, { passive: true });
+        pBar.addEventListener('input', (e) => {
+            isDraggingProgress = true;
+            document.getElementById('mpElapsed').innerText = formatTime(e.target.value);
+        });
+        pBar.addEventListener('change', (e) => {
+            isDraggingProgress = false;
+            manualCmd('seek', parseFloat(e.target.value));
+        });
+
+        function shouldPlayToday(task) {
+            if (!globalSwitchState) return false;
+            let now = new Date();
+            let todayDate = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+            let todayWeekday = now.getDay() || 7;
+
+            let taskMarker = parseInt(task.tiaoxiu_marker || 1);
+            for (let tx of currentTiaoxiuRecords) {
+                let txMarker = parseInt(tx.marker || 0);
+                if (tx.date === todayDate && (txMarker === 0 || txMarker === taskMarker)) {
+                    return tx.action === "enable";
+                }
+            }
+
+            let baseStatus = false;
+            if ((task.specific_dates || []).includes(todayDate)) baseStatus = true;
+            else if ((task.days || []).includes(todayWeekday)) baseStatus = true;
+
+            return baseStatus;
+        }
+
+        function renderDailyTimeline() {
+            let now = new Date();
+            let nowSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+
+            if (nowSec === lastRenderSec) return;
+            lastRenderSec = nowSec;
+
+            let rawEvents = [];
+            currentTasks.forEach(task => {
+                if (shouldPlayToday(task)) {
+                    let parts = (task.start_time || "00:00:00").split(':');
+                    let startSec = parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseInt(parts[2]);
+                    let durSec = (task.duration_m || 0) * 60 + (task.duration_s || 0);
+                    let visDur = durSec > 0 ? durSec : 1800;
+                    rawEvents.push({ start: startSec, end: startSec + visDur, origDur: durSec, id: task.id });
+                }
+            });
+
+            rawEvents.sort((a, b) => a.start - b.start);
+
+            let blocks = [];
+            let current_t = nowSec;
+
+            rawEvents.forEach(ev => {
+                if (ev.end <= current_t) return;
+
+                if (ev.start > current_t) {
+                    let gap = ev.start - current_t;
+                    if (gap <= 80 * 60) {
+                        blocks.push({ type: 'gap', actual_dur: gap, visual_dur: gap, is_short: true });
+                    } else {
+                        blocks.push({ type: 'gap', actual_dur: gap, visual_dur: 80 * 60, is_short: false });
+                    }
+                    current_t = ev.start;
+                }
+
+                if (current_t >= ev.start && current_t < ev.end) {
+                    let play_dur = ev.end - current_t;
+                    blocks.push({ type: 'event', actual_dur: play_dur, visual_dur: play_dur, id: ev.id, origDur: ev.origDur });
+                    current_t = ev.end;
+                }
+            });
+
+            let total_visual_dur = blocks.reduce((sum, b) => sum + b.visual_dur, 0);
+            let windowSpan = Math.max(total_visual_dur, 4800);
+
+            let html = '';
+            let left_visual = 0;
+
+            blocks.forEach(block => {
+                let widthPct = (block.visual_dur / windowSpan) * 100;
+
+                if (block.type === 'event') {
+                    let hue = (block.origDur * 137) % 360;
+                    let color = `hsl(${hue}, 90%, 65%)`;
+                    html += `<div class="timeline-event" style="left: ${left_visual}%; width: ${widthPct}%; background: ${color};" title="排程任务 | 时长: ${block.origDur === 0 ? '无限' : block.origDur + '秒'}"></div>`;
+                } else if (block.type === 'gap' && block.is_short) {
+                    let color = `#ffeaa7`;
+                    html += `<div class="timeline-event" style="left: ${left_visual}%; width: ${widthPct}%; background: ${color};" title="待机间隔 (<=80分) | 实际: ${Math.round(block.actual_dur / 60)}分钟"></div>`;
+                } else if (block.type === 'gap' && !block.is_short) {
+                    html += `<div class="timeline-event" style="left: ${left_visual}%; width: ${widthPct}%; background: transparent; border-bottom: 2px dashed rgba(0,0,0,0.15);" title="长间隔缩放 (>80分) | 实际: ${Math.round(block.actual_dur / 60)}分钟"></div>`;
+                }
+                left_visual += widthPct;
+            });
+
+            let nowStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            html += `<div style="position:absolute; left:0; top:0; bottom:0; width:3px; background:#e74c3c; z-index:5; box-shadow: 1px 0 3px rgba(231,76,60,0.5);"></div>`;
+            html += `<div style="position:absolute; left:5px; top:6px; font-size:0.75em; color:#2c3e50; font-family:'Consolas', 'Courier New', monospace; font-weight:bold; background:rgba(255,255,255,0.85); padding:2px 5px; border-radius:4px; line-height: 1; z-index:6;"><i class="fa-regular fa-clock" style="color:#e74c3c; margin-right:3px;"></i>${nowStr}</div>`;
+
+            if (blocks.length > 0) {
+                let endSec = current_t;
+                let endH = Math.floor(endSec / 3600) % 24;
+                let endM = Math.floor((endSec % 3600) / 60);
+                let endStr = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+                html += `<div style="position:absolute; right:5px; top:6px; font-size:0.75em; color:#2c3e50; font-family:'Consolas', 'Courier New', monospace; font-weight:bold; background:rgba(255,255,255,0.85); padding:2px 5px; border-radius:4px; line-height: 1; z-index:6;">${endStr}</div>`;
+            }
+
+            if (lastTimelineHtml !== html) {
+                document.getElementById('dailyTimeline').innerHTML = html;
+                lastTimelineHtml = html;
+            }
+        }
+
+        async function fetchStatusLoop() {
+            try {
+                const res = await fetch('/api/status');
+                const status = await res.json();
+
+                const footerLeft = document.getElementById('footer-left');
+
+                if (status.is_playing) {
+                    const songName = status.current_playing_name || '未知音频';
+
+                    let footerIcon = '<i class="fa-solid fa-music fa-fade" style="color:#ffffff;"></i>';
+                    let playStateText = '正在播放';
+                    if (songName.includes('[定时]')) {
+                        footerIcon = '<i class="fa-solid fa-clock fa-fade" style="color:#ffffff;"></i>';
+                        playStateText = '定时播放';
+                    } else if (songName.includes('[手动]')) {
+                        footerIcon = '<i class="fa-solid fa-gamepad fa-fade" style="color:#ffffff;"></i>';
+                        playStateText = '手动播放';
+                    }
+
+                    let cleanSongName = songName.replace(/\[定时\] |\[手动\] /g, '');
+                    let newFooterLeftHtml = `${footerIcon} <span style="margin-left:4px; font-weight:normal; opacity:0.9;">${playStateText}:</span> ${cleanSongName}`;
+
+                    if (lastFooterLeftHtml !== newFooterLeftHtml) {
+                        footerLeft.innerHTML = newFooterLeftHtml;
+                        lastFooterLeftHtml = newFooterLeftHtml;
+                    }
+
+                    if (status.frame_data && status.frame_data.length === 200) {
+                        waveformChart.data.datasets[0].data = status.frame_data;
+                        waveformChart.update();
+                    }
+                } else {
+                    let newFooterLeftHtml = `<i class="fa-solid fa-stop" style="color:#ecf0f1;"></i> 待机中...`;
+                    if (lastFooterLeftHtml !== newFooterLeftHtml) {
+                        footerLeft.innerHTML = newFooterLeftHtml;
+                        lastFooterLeftHtml = newFooterLeftHtml;
+                    }
+
+                    waveformChart.data.datasets[0].data = Array(200).fill(0);
+                    waveformChart.update();
+                }
+
+                if (status.sys_stats) {
+                    let newFooterRightHtml = `
+                            <span><i class="fa-solid fa-microchip" style="color:#f1c40f;"></i> CPU: ${status.sys_stats.cpu.toFixed(1)}%</span>
+                            <span><i class="fa-solid fa-memory" style="color:#2ecc71;"></i> RAM: ${status.sys_stats.ram.toFixed(1)}%</span>
+                        `;
+                    if (lastFooterRightHtml !== newFooterRightHtml) {
+                        document.getElementById('footer-right').innerHTML = newFooterRightHtml;
+                        lastFooterRightHtml = newFooterRightHtml;
+                    }
+                }
+
+                if (status.manual_player) {
+                    let mp = status.manual_player;
+                    let playBtn = document.getElementById('mpPlayBtn');
+
+                    let newPlayBtnHtml = mp.status === 'playing' ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-play"></i>';
+                    let newPlayBtnClass = mp.status === 'playing' ? 'btn btn-primary' : 'btn btn-success';
+
+                    if (lastPlayBtnHtml !== newPlayBtnHtml) {
+                        playBtn.innerHTML = newPlayBtnHtml;
+                        playBtn.className = newPlayBtnClass;
+                        playBtn.onclick = () => manualCmd(mp.status === 'playing' ? 'pause' : 'play');
+                        lastPlayBtnHtml = newPlayBtnHtml;
+                    }
+
+                    let modeBtn = document.getElementById('mpModeBtn');
+                    let newModeBtnHtml = '';
+                    if (mp.mode === 'sequential') newModeBtnHtml = '<i class="fa-solid fa-arrow-down-short-wide" title="顺序播放"></i>';
+                    else if (mp.mode === 'loop') newModeBtnHtml = '<i class="fa-solid fa-repeat" title="列表循环"></i>';
+                    else if (mp.mode === 'single') newModeBtnHtml = '<div style="position:relative;"><i class="fa-solid fa-repeat"></i><span style="position:absolute; font-size:0.5em; top:-5px; right:-5px;">1</span></div>';
+
+                    if (lastModeBtnHtml !== newModeBtnHtml) {
+                        modeBtn.innerHTML = newModeBtnHtml;
+                        lastModeBtnHtml = newModeBtnHtml;
+                    }
+
+                    let progContainer = document.getElementById('mpProgressContainer');
+                    if (mp.status !== 'stopped' && mp.current_duration > 0) {
+                        progContainer.style.display = 'flex';
+                        if (!isDraggingProgress) {
+                            let pBar = document.getElementById('mpProgressBar');
+                            pBar.max = mp.current_duration;
+                            pBar.value = mp.elapsed;
+                            document.getElementById('mpElapsed').innerText = formatTime(mp.elapsed);
+                            document.getElementById('mpDuration').innerText = formatTime(mp.current_duration);
+                        }
+                    } else {
+                        progContainer.style.display = 'none';
+                    }
+
+                    let plHtml = '';
+                    if (mp.queue.length === 0) {
+                        plHtml = '<div style="color:#bdc3c7; text-align:center; margin-top:20px;">队列为空，请点击加号添加音乐</div>';
+                    } else {
+                        mp.queue.forEach((item, i) => {
+                            let actClass = (i === mp.current_index && mp.status !== 'stopped') ? 'active' : '';
+                            plHtml += `
+                                    <div class="play-item ${actClass}">
+                                        <div class="play-item-title" onclick="manualCmd('play_idx', ${i})" title="点击播放: ${item.name}">
+                                            <i class="fa-solid fa-file-audio" style="margin-right:5px; opacity:0.7;"></i> ${item.name}
+                                        </div>
+                                        <button class="rm-btn" onclick="manualCmd('remove', ${i})" title="移除该项"><i class="fa-solid fa-xmark"></i></button>
+                                    </div>
+                                `;
+                        });
+                    }
+                    if (lastPlaylistHtml !== plHtml) {
+                        document.getElementById('manualPlaylist').innerHTML = plHtml;
+                        lastPlaylistHtml = plHtml;
+                    }
+                }
+            } catch (error) { }
+
+            renderDailyTimeline();
+            setTimeout(fetchStatusLoop, 60);
+        }
+
+        fetchStatusLoop();
+
+        async function manualCmd(cmd, val = null) {
+            await fetch('/api/player/cmd', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cmd: cmd, val: val }) });
+        }
+
+        function openManualAddModal() {
+            const container = document.getElementById('manual_add_container');
+            container.innerHTML = '';
+            rawMusicData.forEach(item => {
+                const btn = document.createElement('button');
+                btn.type = 'button'; btn.className = 'btn-music-avail';
+                let icon = item.type === 'folder' ? 'fa-folder-open' : 'fa-file-audio';
+                btn.innerHTML = `<i class="fa-solid ${icon}"></i> ${item.name}`;
+                btn.onclick = () => {
+                    manualCmd('add', item);
+                    uiAlert("已添加", `【${item.name}】已推入播控列队！如果是文件夹，内部文件已自动展开。`);
+                    setTimeout(closeSysDialog, 800);
+                };
+                container.appendChild(btn);
+            });
+            if (rawMusicData.length === 0) container.innerHTML = '<span style="color:#7f8c8d; font-size:0.9em;">暂未选择音乐...</span>';
+            document.getElementById('manualAddModal').style.display = 'flex';
+        }
+
+        function handleWheel(e, el, maxVal, minVal = 0) {
+            e.preventDefault();
+            let val = parseInt(el.value);
+            if (isNaN(val)) val = minVal;
+            if (e.deltaY < 0) val++; else val--;
+            if (val > maxVal) val = minVal;
+            if (val < minVal) val = maxVal;
+            if (el.classList.contains('time-input')) { el.value = String(val).padStart(2, '0'); }
+            else { el.value = val; }
+        }
+
+        function getStObj() { return { h: document.getElementById('st_h'), m: document.getElementById('st_m'), s: document.getElementById('st_s') }; }
+        function getDurObj() { return { m: document.getElementById('dur_m'), s: document.getElementById('dur_s') }; }
+
+        function adjustTime(minutesToAdd) {
+            let t = getStObj(); let date = new Date(2000, 0, 1, parseInt(t.h.value) || 0, parseInt(t.m.value) || 0, parseInt(t.s.value) || 0);
+            date.setMinutes(date.getMinutes() + minutesToAdd);
+            t.h.value = String(date.getHours()).padStart(2, '0'); t.m.value = String(date.getMinutes()).padStart(2, '0'); t.s.value = String(date.getSeconds()).padStart(2, '0');
+        }
+        function adjustDuration(secondsToAdd) {
+            let t = getDurObj(); let total = (parseInt(t.m.value) || 0) * 60 + (parseInt(t.s.value) || 0) + secondsToAdd;
+            if (total < 0) total = 0;
+            t.m.value = String(Math.floor(total / 60)).padStart(2, '0'); t.s.value = String(total % 60).padStart(2, '0');
+        }
+
+        function setNowTime() {
+            let now = new Date(); let t = getStObj();
+            t.h.value = String(now.getHours()).padStart(2, '0'); t.m.value = String(now.getMinutes()).padStart(2, '0'); t.s.value = String(now.getSeconds()).padStart(2, '0');
+        }
+
+        async function openTiaoxiuModal() {
+            const res = await fetch('/api/tiaoxiu'); currentTiaoxiuRecords = await res.json(); renderTiaoxiuTable();
+            document.getElementById('txDate').value = ''; document.getElementById('txMarker').value = '0'; document.getElementById('txAction').value = 'disable'; document.getElementById('txNote').value = '';
+            document.getElementById('tiaoxiuModal').style.display = 'flex';
+        }
+        function renderTiaoxiuTable() {
+            const tbody = document.getElementById('tiaoxiuTableBody'); tbody.innerHTML = '';
+            if (currentTiaoxiuRecords.length === 0) return;
+            currentTiaoxiuRecords.sort((a, b) => new Date(a.date) - new Date(b.date)).forEach((record, index) => {
+                const tr = document.createElement('tr');
+                let actionText = (record.action === 'enable') ? '<span style="color:#2ecc71; font-weight:bold;">启用</span>' : '<span style="color:#e74c3c; font-weight:bold;">禁用</span>';
+                let sourceIcon = (record.source === 'sub') ? '<i class="fa-solid fa-cloud-arrow-down" style="color:#3498db;" title="云端订阅"></i> 云端' : '手动';
+
+                tr.innerHTML = `<td><strong>${record.date}</strong></td>
+                                    <td><span style="background:#3498db; color:white; padding:3px 10px; border-radius:12px; font-size:0.8em;">${record.marker === 0 ? '全局(0)' : record.marker}</span></td>
+                                    <td>${actionText}</td>
+                                    <td>${record.note || '-'}</td>
+                                    <td><span style="font-size:0.85em; color:#7f8c8d;">${sourceIcon}</span></td>
+                                    <td><button class="btn btn-danger" style="padding:4px 10px;" onclick="deleteTiaoxiuRecord(${index})"><i class="fa-solid fa-trash"></i></button></td>`;
+                tbody.appendChild(tr);
+            });
+        }
+        function addTiaoxiuRecord() {
+            const dateVal = document.getElementById('txDate').value; const markerVal = parseInt(document.getElementById('txMarker').value) || 0;
+            const actionVal = document.getElementById('txAction').value; const noteVal = document.getElementById('txNote').value.trim();
+            if (!dateVal) { uiAlert("Error", "请先选择日期！"); return; }
+            const existingIndex = currentTiaoxiuRecords.findIndex(r => r.date === dateVal && r.marker === markerVal);
+            if (existingIndex > -1) {
+                currentTiaoxiuRecords[existingIndex].note = noteVal;
+                currentTiaoxiuRecords[existingIndex].action = actionVal;
+                currentTiaoxiuRecords[existingIndex].source = 'manual';
+            } else {
+                currentTiaoxiuRecords.push({ date: dateVal, marker: markerVal, action: actionVal, note: noteVal, source: 'manual' });
+            }
+            renderTiaoxiuTable(); document.getElementById('txNote').value = '';
+        }
+        function deleteTiaoxiuRecord(index) { currentTiaoxiuRecords.splice(index, 1); renderTiaoxiuTable(); }
+
+        async function saveTiaoxiu() {
+            await fetch('/api/tiaoxiu', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(currentTiaoxiuRecords) });
+            closeModals();
+            const txRes = await fetch('/api/tiaoxiu');
+            currentTiaoxiuRecords = await txRes.json();
+            lastRenderSec = -1;
+        }
+
+        async function loadMusicDict() {
+            const res = await fetch('/api/music');
+            rawMusicData = await res.json();
+            musicMap = {}; rawMusicData.forEach(m => { if (m.id != null && m.name) musicMap[String(m.id)] = m.name; });
+        }
+        function renderMusicSelection() {
+            const availContainer = document.getElementById('available_music_container'); const selContainer = document.getElementById('selected_music_container');
+            availContainer.innerHTML = ''; selContainer.innerHTML = '';
+            Object.keys(musicMap).forEach(id => {
+                const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'btn-music-avail'; btn.innerHTML = `<i class="fa-solid fa-plus"></i> ${musicMap[id]}`;
+                btn.onclick = () => { tempSelectedMusicIds.push(id); renderMusicSelection(); }; availContainer.appendChild(btn);
+            });
+            if (tempSelectedMusicIds.length === 0) selContainer.innerHTML = '<span style="color:#7f8c8d; font-size:0.9em;">暂未选择音乐...</span>';
+            else {
+                tempSelectedMusicIds.forEach((id, index) => {
+                    const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'btn-music-sel'; btn.innerHTML = `${index + 1}. ${musicMap[id] || id} <i class="fa-solid fa-xmark"></i>`;
+                    btn.onclick = () => { tempSelectedMusicIds.splice(index, 1); renderMusicSelection(); }; selContainer.appendChild(btn);
+                });
+            }
+        }
+
+        async function loadTasks() {
+            const res = await fetch('/api/tasks'); currentTasks = await res.json();
+            const tbody = document.getElementById('taskTableBody'); tbody.innerHTML = '';
+
+            currentTasks.sort((a, b) => (a.start_time || "00").localeCompare(b.start_time || "00"));
+
+            currentTasks.forEach((task, index) => {
+                const displayNames = (task.music_ids || []).map(id => musicMap[String(id)] || id).join(' <i class="fa-solid fa-arrow-right" style="color:#bdc3c7; font-size:0.8em;"></i> ');
+                let durationText = "<span style='color:#2ecc71;'><i class='fa-solid fa-infinity'></i> ∞</span>";
+                if (task.duration_m > 0 || task.duration_s > 0) durationText = `<strong>${task.duration_m || 0}</strong>m <strong>${task.duration_s || 0}</strong>s`;
+
+                let sTimeStr = task.start_time || '00:00:00';
+                let sParts = sTimeStr.split(':');
+                let sH = parseInt(sParts[0]) || 0; let sM = parseInt(sParts[1]) || 0; let sS = parseInt(sParts[2]) || 0;
+                let dM = task.duration_m || 0; let dS = task.duration_s || 0;
+                let endTimeHtml = "";
+                if (dM === 0 && dS === 0) {
+                    endTimeHtml = `<div style="font-size:0.85em; color:#7f8c8d; margin-top:4px;"><i class="fa-solid fa-arrow-right"></i> 不限时</div>`;
+                } else {
+                    let totalSec = sH * 3600 + sM * 60 + sS + dM * 60 + dS;
+                    let eH = Math.floor(totalSec / 3600) % 24; let eM = Math.floor((totalSec % 3600) / 60); let eS = totalSec % 60;
+                    let eTimeStr = `${String(eH).padStart(2, '0')}:${String(eM).padStart(2, '0')}:${String(eS).padStart(2, '0')}`;
+                    endTimeHtml = `<div style="font-size:0.85em; color:#7f8c8d; margin-top:4px;"><i class="fa-solid fa-arrow-right"></i> ${eTimeStr}</div>`;
+                }
+
+                let cycleHtml = (task.days || []).join(', ');
+                if (task.specific_dates && task.specific_dates.length > 0) {
+                    let datesText = task.specific_dates.join('<br>');
+                    cycleHtml += (cycleHtml ? '<br>' : '') + `<span style="color:#e74c3c; font-size:0.85em;"><i class="fa-solid fa-calendar-star"></i> ${datesText}</span>`;
+                }
+                if (!cycleHtml) cycleHtml = '-';
+
+                let seqText = task.sequence_mode === 'random' ? (currentLang === 'zh' ? '随机' : 'Rand') : (currentLang === 'zh' ? '顺序' : 'Seq');
+                let detailsHtml = `
+                        <div style="font-size:0.85em; color:#7f8c8d; display: flex; gap: 12px; align-items: center; flex-wrap: nowrap; white-space: nowrap;">
+                            <span><i class="fa-solid fa-layer-group" style="margin-right:4px;"></i>${seqText}</span>
+                            <span><i class="fa-solid fa-tag" style="margin-right:4px;"></i>${currentLang === 'zh' ? '标记' : 'Mk'}: ${task.tiaoxiu_marker || 1}</span>
+                        </div>`;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                        <td style="text-align: center; color: #7f8c8d; font-weight: bold;">${index + 1}</td>
+                        <td><strong style="font-size:1.1em; color:#2c3e50;">${sTimeStr}</strong>${endTimeHtml}</td>
+                        <td>${durationText}</td><td>${cycleHtml}</td><td style="font-size:0.9em;">${displayNames}</td><td>${detailsHtml}</td>
+                        <td>
+                            <button class="btn btn-primary" style="padding: 6px 12px;" onclick="openModal(${task.id})"><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn btn-danger" style="padding: 6px 12px;" onclick="deleteTask(${task.id})"><i class="fa-solid fa-trash"></i></button>
+                        </td>`;
+                tbody.appendChild(tr);
+            });
+            lastRenderSec = -1;
+        }
+
+        function deleteTask(id) { uiConfirm("Delete", translations[currentLang].delete_confirm, async () => { await fetch(`/api/tasks/${id}`, { method: 'DELETE' }); loadTasks(); }); }
+
+        function openModal(taskId = null) {
+            document.getElementById('taskModal').style.display = 'flex'; const titleEl = document.getElementById('modalTitle');
+            if (taskId) titleEl.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> <span data-i18n="edit_task">${translations[currentLang].edit_task}</span>`;
+            else titleEl.innerHTML = `<i class="fa-solid fa-plus"></i> <span data-i18n="add_task">${translations[currentLang].add_task}</span>`;
+
+            let t_st = getStObj(), t_dur = getDurObj();
+            if (taskId) {
+                const task = currentTasks.find(t => t.id === taskId); document.getElementById('taskId').value = task.id;
+                let parts = (task.start_time || "00:00:00").split(':');
+                t_st.h.value = parts[0] || "00"; t_st.m.value = parts[1] || "00"; t_st.s.value = parts[2] || "00";
+                t_dur.m.value = String(task.duration_m || 0).padStart(2, '0'); t_dur.s.value = String(task.duration_s || 0).padStart(2, '0');
+
+                document.getElementById('specific_dates').value = (task.specific_dates || []).join('\n');
+                document.getElementById('sequence_mode').value = task.sequence_mode || 'sequential';
+                document.getElementById('folder_mode').value = task.folder_mode || 'sequential';
+                document.getElementById('tiaoxiu_marker').value = task.tiaoxiu_marker || 1;
+                document.getElementById('folder_play_count').value = task.folder_play_count || 1;
+                document.querySelectorAll('#daysGroup input').forEach(cb => cb.checked = (task.days || []).includes(parseInt(cb.value)));
+                tempSelectedMusicIds = (task.music_ids || []).map(String);
+            } else {
+                document.getElementById('taskId').value = '';
+                t_st.h.value = lastUsedStartTime.h; t_st.m.value = lastUsedStartTime.m; t_st.s.value = lastUsedStartTime.s;
+                t_dur.m.value = "01"; t_dur.s.value = "00";
+
+                document.getElementById('specific_dates').value = '';
+                document.getElementById('sequence_mode').value = 'sequential'; document.getElementById('folder_mode').value = 'sequential';
+                document.getElementById('tiaoxiu_marker').value = 1; document.getElementById('folder_play_count').value = 1;
+                document.querySelectorAll('#daysGroup input').forEach(cb => { let val = parseInt(cb.value); cb.checked = (val >= 1 && val <= 5); });
+                tempSelectedMusicIds = [];
+            }
+            renderMusicSelection();
+            document.getElementById('taskModal').querySelector('.modal-box').focus();
+        }
+
+        async function saveTask() {
+            let t_st = getStObj(), t_dur = getDurObj();
+            lastUsedStartTime = { h: t_st.h.value, m: t_st.m.value, s: t_st.s.value };
+
+            const payload = {
+                start_time: `${t_st.h.value.padStart(2, '0')}:${t_st.m.value.padStart(2, '0')}:${t_st.s.value.padStart(2, '0')}`,
+                duration_m: parseInt(t_dur.m.value) || 0, duration_s: parseInt(t_dur.s.value) || 0,
+                days: Array.from(document.querySelectorAll('#daysGroup input:checked')).map(cb => parseInt(cb.value)),
+                specific_dates: document.getElementById('specific_dates').value.split(/[\n,]+/).map(s => s.trim()).filter(s => s),
+                sequence_mode: document.getElementById('sequence_mode').value,
+                folder_mode: document.getElementById('folder_mode').value,
+                music_ids: tempSelectedMusicIds,
+                tiaoxiu_marker: parseInt(document.getElementById('tiaoxiu_marker').value) || 1,
+                folder_play_count: parseInt(document.getElementById('folder_play_count').value) || 1
+            };
+            const taskId = document.getElementById('taskId').value;
+            await fetch(taskId ? `/api/tasks/${taskId}` : `/api/tasks`, { method: taskId ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            closeModals(); loadTasks();
+        }
+
+        async function initData() {
+            setLanguage('zh');
+            await loadMusicDict();
+            const txRes = await fetch('/api/tiaoxiu');
+            currentTiaoxiuRecords = await txRes.json();
+            await loadTasks();
+        }
+        checkSecurityOnLoad();
+    </script>
+</body>
+</html>
