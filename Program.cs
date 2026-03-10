@@ -33,7 +33,8 @@ namespace BroadcastSystemNet
                 {
                     lock (_lock)
                     {
-                        string logPath = Path.Combine(Program.BaseDir, "res", "system_error.log");
+                        // [修改1] 日志也存入 AppData
+                        string logPath = Path.Combine(Program.AppDataDir, "system_error.log");
                         string logMsg = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}";
                         if (ex != null) logMsg += $"\r\n   细节: {ex.Message}\r\n   追踪: {ex.StackTrace}";
                         File.AppendAllText(logPath, logMsg + "\r\n----------------------------------\r\n");
@@ -46,12 +47,21 @@ namespace BroadcastSystemNet
 
     internal static class Program
     {
+        // ==========================================
+        // 1. 静态执行区 (只读，位于 Program Files)
+        // ==========================================
         public static string BaseDir = AppDomain.CurrentDomain.BaseDirectory;
         public static string ResDir = Path.Combine(BaseDir, "res");
-        public static string ConfigDir = Path.Combine(ResDir, "config");
         public static string BinDir = Path.Combine(ResDir, "bin");
         public static string FfplayPath = Path.Combine(BinDir, "ffplay.exe");
         public static string FfmpegPath = Path.Combine(BinDir, "ffmpeg.exe");
+
+        // ==========================================
+        // 2. 动态数据区 (可读写，位于 AppData/Local)
+        // ==========================================
+        public static string AppDataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CampusBroadcastSystem");
+        public static string ConfigDir = Path.Combine(AppDataDir, "config");
+        public static string RingDir = Path.Combine(AppDataDir, "ring");
 
         public static RSA GlobalRsa = RSA.Create(2048);
         public static string PublicKeyPem = GlobalRsa.ExportSubjectPublicKeyInfoPem();
@@ -86,7 +96,6 @@ namespace BroadcastSystemNet
         private static DateTime _lastCpuTime = DateTime.UtcNow;
         private static TimeSpan _lastCpuTotal;
 
-        // 全局图标变量
         public static Icon AppIcon;
 
         [STAThread]
@@ -94,10 +103,11 @@ namespace BroadcastSystemNet
         {
             ApplicationConfiguration.Initialize();
 
+            // 初始化动态数据目录
+            Directory.CreateDirectory(AppDataDir);
             Directory.CreateDirectory(ConfigDir);
-            Directory.CreateDirectory(BinDir);
+            Directory.CreateDirectory(RingDir);
 
-            // 动态加载自定义图标 (如果存在)
             string iconPath = Path.Combine(ResDir, "favicon.ico");
             if (File.Exists(iconPath))
             {
@@ -183,9 +193,17 @@ namespace BroadcastSystemNet
                 if (Path.IsPathRooted(path)) return Path.GetFullPath(path);
 
                 string relPath = path.TrimStart('\\', '/');
-                string finalPath = Path.GetFullPath(Path.Combine(BaseDir, relPath));
+                // [修改2] 相对路径优先解析到 AppDataDir
+                string finalPath = Path.GetFullPath(Path.Combine(AppDataDir, relPath));
+                
+                // 为了兼容旧配置，如果在 AppData 找不到，再尝试去 BaseDir 找
+                if (!File.Exists(finalPath) && !Directory.Exists(finalPath)) 
+                {
+                     string oldPath = Path.GetFullPath(Path.Combine(BaseDir, relPath));
+                     if (File.Exists(oldPath) || Directory.Exists(oldPath)) return oldPath;
+                }
 
-                if (!finalPath.StartsWith(BaseDir, StringComparison.OrdinalIgnoreCase)) return "";
+                if (!finalPath.StartsWith(AppDataDir, StringComparison.OrdinalIgnoreCase)) return "";
 
                 return finalPath;
             }
@@ -457,7 +475,12 @@ namespace BroadcastSystemNet
             app.UseStaticFiles(new StaticFileOptions { FileProvider = new PhysicalFileProvider(ResDir), RequestPath = "/res" });
             app.MapGet("/", async context => await context.Response.WriteAsync(await File.ReadAllTextAsync(Path.Combine(ResDir, "index.html"))));
             app.MapGet("/m", async context => await context.Response.WriteAsync(await File.ReadAllTextAsync(Path.Combine(ResDir, "mobile.html"))));
-            app.MapGet("/api/public_key", async context => { context.Response.ContentType = "text/plain"; await context.Response.WriteAsync(PublicKeyPem); });
+            
+            // [修改3] 修复公钥双引号导致手机端崩溃的问题
+            app.MapGet("/api/public_key", async context => { 
+                context.Response.ContentType = "text/plain"; 
+                await context.Response.WriteAsync(PublicKeyPem); 
+            });
 
             app.MapPost("/api/login", async context => {
                 using (var reader = new StreamReader(context.Request.Body))
@@ -702,7 +725,7 @@ namespace BroadcastSystemNet
                                     {
                                         var item = new JsonObject();
                                         item["name"] = Path.GetFileName(f);
-                                        item["path"] = f.StartsWith(BaseDir) ? f.Substring(BaseDir.Length).TrimStart('\\', '/').Replace('\\', '/') : f;
+                                        item["path"] = f.StartsWith(AppDataDir) ? f.Substring(AppDataDir.Length).TrimStart('\\', '/').Replace('\\', '/') : f;
                                         item["type"] = "file";
                                         ManualQueue.Add(item);
                                     }
@@ -1045,7 +1068,8 @@ namespace BroadcastSystemNet
                     cipher.Init(false, new ParametersWithIV(new KeyParameter(aesKey), iv));
                     var decryptedAudio = cipher.DoFinal(aesCipherAudio);
 
-                    string tempWav = Path.Combine(ResDir, "temp_intercom.wav");
+                    // [修改4] 对讲临时文件保存到 AppData，解决 Program Files 权限拒绝问题
+                    string tempWav = Path.Combine(AppDataDir, "temp_intercom.wav");
                     using (var fs = new FileStream(tempWav, FileMode.Create))
                     using (var bw = new BinaryWriter(fs))
                     {
@@ -1136,7 +1160,6 @@ namespace BroadcastSystemNet
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
 
-            // 应用全局图标
             this.Icon = Program.AppIcon;
 
             TableLayoutPanel tlp = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 4, Padding = new Padding(25) };
@@ -1208,7 +1231,6 @@ namespace BroadcastSystemNet
             this.StartPosition = FormStartPosition.CenterScreen;
             this.MaximizeBox = false;
 
-            // 应用全局图标
             this.Icon = Program.AppIcon;
 
             TableLayoutPanel mainPnl = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 5 };
@@ -1253,7 +1275,6 @@ namespace BroadcastSystemNet
 
             this.Controls.Add(mainPnl);
 
-            // 应用全局托盘图标
             trayIcon = new NotifyIcon { Icon = Program.AppIcon, Text = "智能校园广播", Visible = true };
             trayIcon.DoubleClick += (s, e) => { this.Show(); this.WindowState = FormWindowState.Normal; };
 
@@ -1322,7 +1343,6 @@ namespace BroadcastSystemNet
             this.Size = new Size(1150, 800);
             this.StartPosition = FormStartPosition.CenterScreen;
 
-            // 应用全局图标
             this.Icon = Program.AppIcon;
 
             InitializeComponents();
@@ -1347,8 +1367,20 @@ namespace BroadcastSystemNet
 
             var btnFile = UIHelper.CreateAutoBtn("导入文件", Color.FromArgb(240, 240, 240), UIHelper.TextDark); btnFile.Click += (s, e) => BrowseFile(); actionFlow.Controls.Add(btnFile);
             var btnDir = UIHelper.CreateAutoBtn("导入整个文件夹", Color.FromArgb(240, 240, 240), UIHelper.TextDark); btnDir.Click += (s, e) => BrowseFolder(); actionFlow.Controls.Add(btnDir);
-            var btnScanDef = UIHelper.CreateAutoBtn("扫描默认铃声库 (res/ring)", Color.FromArgb(240, 240, 240), UIHelper.TextDark); btnScanDef.Click += (s, e) => DoScan(Path.Combine(Program.ResDir, "ring")); actionFlow.Controls.Add(btnScanDef);
-            var btnOpenRingDir = UIHelper.CreateAutoBtn("在资源管理器中打开默认库", Color.FromArgb(240, 240, 240), UIHelper.TextDark); btnOpenRingDir.Click += (s, e) => { Directory.CreateDirectory(Path.Combine(Program.ResDir, "ring")); Process.Start(new ProcessStartInfo(Path.Combine(Program.ResDir, "ring")) { UseShellExecute = true }); }; actionFlow.Controls.Add(btnOpenRingDir);
+
+            // 扫描默认铃声库
+            var btnScanDef = UIHelper.CreateAutoBtn("扫描默认铃声库 (AppData/ring)", Color.FromArgb(240, 240, 240), UIHelper.TextDark); btnScanDef.Click += (s, e) => DoScan(Program.RingDir); actionFlow.Controls.Add(btnScanDef);
+
+            // [新增] 扫描自定义目录
+            var btnScanCust = UIHelper.CreateAutoBtn("扫描自定义目录...", Color.FromArgb(240, 240, 240), UIHelper.TextDark);
+            btnScanCust.Click += (s, e) => {
+                using var fbd = new FolderBrowserDialog { Description = "请选择要批量提取音频的文件夹" };
+                if (fbd.ShowDialog() == DialogResult.OK) DoScan(fbd.SelectedPath);
+            };
+            actionFlow.Controls.Add(btnScanCust);
+
+            // 打开默认库
+            var btnOpenRingDir = UIHelper.CreateAutoBtn("在资源管理器中打开默认库", Color.FromArgb(240, 240, 240), UIHelper.TextDark); btnOpenRingDir.Click += (s, e) => { Process.Start(new ProcessStartInfo(Program.RingDir) { UseShellExecute = true }); }; actionFlow.Controls.Add(btnOpenRingDir);
 
             tlpTop.Controls.Add(actionFlow, 0, 0);
 
@@ -1480,7 +1512,8 @@ namespace BroadcastSystemNet
 
         private string MakeRelPath(string filepath)
         {
-            string bDir = Program.BaseDir.TrimEnd('\\', '/') + Path.DirectorySeparatorChar;
+            // [修改6] 将导入文件的路径简化逻辑，指向 AppDataDir
+            string bDir = Program.AppDataDir.TrimEnd('\\', '/') + Path.DirectorySeparatorChar;
             string absPath = Path.GetFullPath(filepath);
             if (absPath.StartsWith(bDir, StringComparison.OrdinalIgnoreCase))
                 return absPath.Substring(bDir.Length).Replace('\\', '/');
