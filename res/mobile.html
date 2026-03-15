@@ -7,74 +7,314 @@
     <link rel="icon" type="image/svg+xml" href="/res/favicon.svg">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { 
-            font-family: "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; 
-            margin: 0; background: #f4f6f8; color: #2c3e50; 
-            display: flex; flex-direction: column; height: 100vh; overflow: hidden;
-            touch-action: manipulation; 
+        body {
+            font-family: "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            margin: 0;
+            background: #f4f6f8;
+            color: #2c3e50;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            touch-action: manipulation;
         }
-        button, input { font-family: inherit; }
 
-        .header { 
-            background: #ffffff; padding: 15px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
-            display: flex; justify-content: space-between; align-items: center; z-index: 10; flex-shrink: 0;
+        button, input {
+            font-family: inherit;
         }
-        .header h2 { margin: 0; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
-        
-        .top-controls { display: flex; align-items: center; gap: 15px; }
-        .btn-topbar { 
-            background: #f0f2f5; color: #34495e; border: none; padding: 6px 12px; 
-            border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.9rem;
-        }
-        .sys-status { font-family: "Consolas", monospace; font-size: 0.8rem; color: #7f8c8d; text-align: right; line-height: 1.2;}
 
-        .content { 
-            flex: 1; overflow-y: hidden; padding: 15px; display: flex; flex-direction: column; 
+        .header {
+            background: #ffffff;
+            padding: 15px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+            flex-shrink: 0;
+        }
+
+            .header h2 {
+                margin: 0;
+                font-size: 1.2rem;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+        .top-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .btn-topbar {
+            background: #f0f2f5;
+            color: #34495e;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .sys-status {
+            font-family: "Consolas", monospace;
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            text-align: right;
+            line-height: 1.2;
+        }
+
+        .content {
+            flex: 1;
+            overflow-y: hidden;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
             padding-bottom: 140px;
         }
-        
-        .card { 
-            background: #ffffff; border-radius: 12px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); 
-            border: 1px solid #edf2f7; flex: 1; display: flex; flex-direction: column; overflow: hidden;
-        }
-        
-        #manualPlaylist { flex: 1; overflow-y: auto; padding-right: 5px; }
 
-        .play-item { padding: 12px 10px; border-bottom: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center; border-radius: 6px; margin-bottom: 4px; cursor: pointer; font-size: 0.95rem;}
-        .play-item.active { background: #3498db; color: white; font-weight: bold; }
-        .play-item-title { flex: 1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .rm-btn { background: none; border: none; color: #e74c3c; cursor: pointer; padding: 4px 12px; margin-left: 10px; border-radius: 4px; font-size: 1.1rem;}
+        .card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+            border: 1px solid #edf2f7;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #manualPlaylist {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .play-item {
+            padding: 12px 10px;
+            border-bottom: 1px solid #edf2f7;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 6px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+            .play-item.active {
+                background: #3498db;
+                color: white;
+                font-weight: bold;
+            }
+
+        .play-item-title {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .rm-btn {
+            background: none;
+            border: none;
+            color: #e74c3c;
+            cursor: pointer;
+            padding: 4px 12px;
+            margin-left: 10px;
+            border-radius: 4px;
+            font-size: 1.1rem;
+        }
 
         .bottom-controller {
-            position: fixed; bottom: 0; left: 0; right: 0; background: #ffffff;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.1); border-radius: 20px 20px 0 0;
-            padding: 15px 20px; z-index: 100;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #ffffff;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+            border-radius: 20px 20px 0 0;
+            padding: 15px 20px;
+            z-index: 100;
         }
 
-        .status-text { text-align: center; font-size: 1rem; font-weight: bold; margin-bottom: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #3498db;}
-        
-        .progress-bar-container { display: flex; flex-direction: column; gap: 4px; margin-bottom: 15px; }
-        .progress-time { display: flex; justify-content: space-between; font-size: 0.8rem; color: #7f8c8d; font-family: "Consolas", monospace;}
-        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; margin: 0; }
-        input[type=range]:focus { outline: none; }
-        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; background: #bdc3c7; border-radius: 3px; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; background: #3498db; margin-top: -6px; }
+        .status-text {
+            text-align: center;
+            font-size: 1rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #3498db;
+        }
 
-        .btn-group { display: flex; justify-content: space-around; align-items: center; margin-bottom: 5px;}
-        .btn-ctrl { background: #ecf0f1; border: none; color: #2c3e50; width: 50px; height: 50px; border-radius: 50%; font-size: 1.2rem; display: flex; justify-content: center; align-items: center;}
-        .btn-play { background: #2ecc71; color: white; width: 65px; height: 65px; font-size: 1.6rem; box-shadow: 0 4px 15px rgba(46,204,113,0.4); }
-        .btn-play.paused { background: #3498db; box-shadow: 0 4px 15px rgba(52,152,219,0.4); }
+        .progress-bar-container {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 15px;
+        }
 
-        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); z-index: 1000; align-items: center; justify-content: center; }
-        .modal-box { background: #ffffff; width: 85%; max-height: 80vh; border-radius: 16px; display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.2); overflow: hidden; }
-        .modal-header { padding: 15px 20px; border-bottom: 1px solid #edf2f7; font-size: 1.1rem; font-weight: bold; color: #2c3e50; display: flex; justify-content: space-between; align-items: center;}
-        .modal-body { padding: 15px 20px; flex: 1; overflow-y: auto; background: #fcfcfc;}
-        .modal-footer { padding: 10px 20px; background: #f8f9fa; text-align: right; border-top: 1px solid #edf2f7;}
-        .btn-close { background: #ecf0f1; color: #7f8c8d; border: none; padding: 8px 20px; border-radius: 6px; font-weight: bold; font-size: 0.95rem; cursor: pointer;}
-        
-        .task-item { background: #fff; padding: 10px 12px; border-radius: 8px; border: 1px solid #edf2f7; margin-bottom: 8px; display: flex; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.02);}
-        .task-time { font-family: "Consolas", monospace; font-size: 1.05rem; font-weight: bold; color: #3498db; width: 75px; flex-shrink: 0;}
-        .task-name { flex: 1; font-size: 0.9rem; color: #34495e; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+        .progress-time {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            font-family: "Consolas", monospace;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            margin: 0;
+        }
+
+            input[type=range]:focus {
+                outline: none;
+            }
+
+            input[type=range]::-webkit-slider-runnable-track {
+                width: 100%;
+                height: 6px;
+                background: #bdc3c7;
+                border-radius: 3px;
+            }
+
+            input[type=range]::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                height: 18px;
+                width: 18px;
+                border-radius: 50%;
+                background: #3498db;
+                margin-top: -6px;
+            }
+
+        .btn-group {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .btn-ctrl {
+            background: #ecf0f1;
+            border: none;
+            color: #2c3e50;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn-play {
+            background: #2ecc71;
+            color: white;
+            width: 65px;
+            height: 65px;
+            font-size: 1.6rem;
+            box-shadow: 0 4px 15px rgba(46,204,113,0.4);
+        }
+
+            .btn-play.paused {
+                background: #3498db;
+                box-shadow: 0 4px 15px rgba(52,152,219,0.4);
+            }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(2px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-box {
+            background: #ffffff;
+            width: 85%;
+            max-height: 80vh;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .modal-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #edf2f7;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #2c3e50;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            padding: 15px 20px;
+            flex: 1;
+            overflow-y: auto;
+            background: #fcfcfc;
+        }
+
+        .modal-footer {
+            padding: 10px 20px;
+            background: #f8f9fa;
+            text-align: right;
+            border-top: 1px solid #edf2f7;
+        }
+
+        .btn-close {
+            background: #ecf0f1;
+            color: #7f8c8d;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+
+        .task-item {
+            background: #fff;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #edf2f7;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        }
+
+        .task-time {
+            font-family: "Consolas", monospace;
+            font-size: 1.05rem;
+            font-weight: bold;
+            color: #3498db;
+            width: 75px;
+            flex-shrink: 0;
+        }
+
+        .task-name {
+            flex: 1;
+            font-size: 0.9rem;
+            color: #34495e;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -101,7 +341,7 @@
 
     <div class="bottom-controller">
         <div class="status-text" id="statusText"><i class="fa-solid fa-stop"></i> 待机中...</div>
-        
+
         <div class="progress-bar-container" id="mpProgressContainer" style="display:none;">
             <div class="progress-time"><span id="mpElapsed">00:00</span><span id="mpDuration">00:00</span></div>
             <input type="range" id="mpProgressBar" min="0" max="100" value="0" step="0.1">
@@ -112,10 +352,11 @@
             <button class="btn-ctrl btn-play" id="mpPlayBtn" onclick="manualCmd('play')"><i class="fa-solid fa-play"></i></button>
             <button class="btn-ctrl" style="background:#e74c3c; color:white;" onclick="manualCmd('stop')"><i class="fa-solid fa-stop"></i></button>
             <button class="btn-ctrl" onclick="manualCmd('next')"><i class="fa-solid fa-forward-step"></i></button>
+            <button class="btn-ctrl" onclick="document.getElementById('volumeModal').style.display='flex'"><i class="fa-solid fa-volume-high"></i></button>
         </div>
     </div>
 
-    <div id="scheduleModal" class="modal-overlay">
+    <div id="scheduleModal" class="modal-overlay" onclick="if(event.target===this) closeScheduleModal()">
         <div class="modal-box">
             <div class="modal-header">
                 <span><i class="fa-solid fa-list-check"></i> 今日排程概览</span>
@@ -127,7 +368,7 @@
         </div>
     </div>
 
-    <div id="manualAddModal" class="modal-overlay">
+    <div id="manualAddModal" class="modal-overlay" onclick="if(event.target===this) closeManualAddModal()">
         <div class="modal-box">
             <div class="modal-header">
                 <span><i class="fa-solid fa-music"></i> 音乐资源库</span>
@@ -136,6 +377,19 @@
             <div class="modal-footer">
                 <button class="btn-close" onclick="closeManualAddModal()">关闭</button>
             </div>
+        </div>
+    </div>
+
+    <div id="volumeModal" class="modal-overlay" onclick="if(event.target===this) this.style.display='none'" style="z-index: 2000;">
+        <div class="modal-box" style="width: 85%; padding: 25px 20px; border-radius: 16px; text-align: center;">
+            <h3 style="margin-top: 0; color: #2c3e50;"><i class="fa-solid fa-sliders"></i> 播控音量调节</h3>
+            <div style="display: flex; align-items: center; gap: 15px; margin: 25px 0;">
+                <i class="fa-solid fa-volume-off" style="color: #bdc3c7; font-size: 1.2rem;"></i>
+                <input type="range" id="mpVolumeBar" min="0" max="200" value="100" step="5" style="flex: 1;">
+                <i class="fa-solid fa-volume-high" style="color: #e74c3c; font-size: 1.2rem;"></i>
+            </div>
+            <div id="mpVolumeLabel" style="font-size: 1.6rem; font-weight: bold; color: #3498db; margin-bottom: 25px; font-family: Consolas;">100%</div>
+            <button style="width: 100%; padding: 14px; background: #3498db; color: #fff; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold;" onclick="document.getElementById('volumeModal').style.display='none'">确 认</button>
         </div>
     </div>
 
@@ -209,46 +463,27 @@
             });
         }
 
-        window.fetch = async function(...args) {
-            let [resource, config] = args;
-            config = config || {};
-
+        window.fetch = async function (...args) {
+            let [resource, config] = args; config = config || {};
             if (typeof resource === 'string' && resource.startsWith('/api/')) {
                 if (!config.headers) config.headers = {};
                 let token = localStorage.getItem('sys_token');
                 if (token) config.headers['Authorization'] = 'Bearer ' + token;
             }
-
             let response = await originalFetch(resource, config);
-
             if (response.status === 401 && resource !== '/api/login') {
                 if (!isAuthenticating) {
                     isAuthenticating = true;
                     authPromise = new Promise(async (resolve) => {
                         let pwd = await showBeautifulPasswordPrompt();
-                        
                         if (pwd !== null) {
-                            let loginRes = await originalFetch('/api/login', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ password: pwd })
-                            });
-                            
-                            if (loginRes.ok) {
-                                let data = await loginRes.json();
-                                localStorage.setItem('sys_token', data.token);
-                                resolve(true); 
-                            } else {
-                                alert("密码错误，访问被拒绝");
-                                resolve(false);
-                            }
-                        } else {
-                            resolve(false); 
-                        }
+                            let loginRes = await originalFetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pwd }) });
+                            if (loginRes.ok) { let data = await loginRes.json(); localStorage.setItem('sys_token', data.token); resolve(true); }
+                            else { alert("密码错误，访问被拒绝"); resolve(false); }
+                        } else { resolve(false); }
                         isAuthenticating = false;
                     });
                 }
-
                 let success = await authPromise;
                 if (success) {
                     if (!config.headers) config.headers = {};
@@ -258,7 +493,7 @@
             }
             return response;
         };
-        
+
         let isDraggingProgress = false;
         let currentTasks = [];
         let globalSwitchState = true;
@@ -274,7 +509,7 @@
         }
 
         const pBar = document.getElementById('mpProgressBar');
-        pBar.addEventListener('touchstart', () => isDraggingProgress = true, {passive: true});
+        pBar.addEventListener('touchstart', () => isDraggingProgress = true, { passive: true });
         pBar.addEventListener('mousedown', () => isDraggingProgress = true);
         pBar.addEventListener('input', (e) => {
             isDraggingProgress = true;
@@ -285,20 +520,28 @@
             manualCmd('seek', parseFloat(e.target.value));
         });
 
-        async function manualCmd(cmd, val=null) {
+        const mpVolBar = document.getElementById('mpVolumeBar');
+        mpVolBar.addEventListener('change', (e) => {
+            manualCmd('volume', parseInt(e.target.value));
+        });
+        mpVolBar.addEventListener('input', (e) => {
+            document.getElementById('mpVolumeLabel').innerText = e.target.value + '%';
+        });
+
+        async function manualCmd(cmd, val = null) {
             await fetch('/api/player/cmd', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cmd: cmd, val: val }) });
         }
 
         function shouldPlayToday(task) {
             if (!globalSwitchState) return false;
             let now = new Date();
-            let todayDate = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
-            let todayWeekday = now.getDay() || 7; 
-            
+            let todayDate = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+            let todayWeekday = now.getDay() || 7;
+
             let taskMarker = parseInt(task.tiaoxiu_marker || 1);
             for (let tx of currentTiaoxiuRecords) {
-                let txMarker = parseInt(tx.marker || 0);
-                if (tx.date === todayDate && (txMarker === 0 || txMarker === taskMarker)) return tx.action === "enable";
+                let txMarker = parseInt(tx.marker || 0); let sDate = tx.start_date || tx.date; let eDate = tx.end_date || sDate;
+                if (todayDate >= sDate && todayDate <= eDate) { if (txMarker === 0 || txMarker === taskMarker) return tx.action === "enable"; }
             }
             if ((task.specific_dates || []).includes(todayDate)) return true;
             if ((task.days || []).includes(todayWeekday)) return true;
@@ -311,7 +554,7 @@
         function openManualAddModal() {
             const container = document.getElementById('manual_add_container');
             container.innerHTML = '';
-            if(rawMusicData.length === 0) {
+            if (rawMusicData.length === 0) {
                 container.innerHTML = '<div style="color:#7f8c8d; text-align:center; padding: 20px 0;">[ 资源库为空，请在电脑端配置 ]</div>';
             } else {
                 rawMusicData.forEach(item => {
@@ -328,45 +571,37 @@
         function closeManualAddModal() { document.getElementById('manualAddModal').style.display = 'none'; }
 
         async function fetchInitData() {
-            const mRes = await fetch('/api/music'); 
-            rawMusicData = await mRes.json();
-            musicMap = {}; 
-            rawMusicData.forEach(m => { if(m.id != null && m.name) musicMap[String(m.id)] = m.name; });
+            const mRes = await fetch('/api/music'); rawMusicData = await mRes.json(); musicMap = {};
+            rawMusicData.forEach(m => { if (m.id != null && m.name) musicMap[String(m.id)] = m.name; });
 
-            const txRes = await fetch('/api/tiaoxiu');
-            currentTiaoxiuRecords = await txRes.json();
-            
-            const setRes = await fetch('/api/settings');
-            const setJson = await setRes.json();
-            globalSwitchState = setJson.global_switch;
+            const txRes = await fetch('/api/tiaoxiu'); currentTiaoxiuRecords = await txRes.json();
+            const setRes = await fetch('/api/settings'); const setJson = await setRes.json(); globalSwitchState = setJson.global_switch;
+            const tRes = await fetch('/api/tasks'); currentTasks = await tRes.json();
 
-            const tRes = await fetch('/api/tasks');
-            currentTasks = await tRes.json();
-            
             let html = '';
-            currentTasks.sort((a,b) => (a.start_time || "00").localeCompare(b.start_time || "00"));
+            currentTasks.sort((a, b) => (a.start_time || "00").localeCompare(b.start_time || "00"));
             currentTasks.forEach(task => {
-                if(shouldPlayToday(task)) {
-                    let sTimeStr = (task.start_time || '00:00:00').substring(0, 5); 
+                if (shouldPlayToday(task)) {
+                    let sTimeStr = (task.start_time || '00:00:00').substring(0, 5);
                     let displayNames = (task.music_ids || []).map(id => musicMap[String(id)] || "未知音频").join(', ');
-                    
-                    html += `
-                        <div class="task-item">
-                            <div class="task-time">${sTimeStr}</div>
-                            <div class="task-name"><i class="fa-solid fa-music" style="color:#bdc3c7; margin-right:4px;"></i> ${displayNames}</div>
-                        </div>`;
+                    html += `<div class="task-item"><div class="task-time">${sTimeStr}</div><div class="task-name"><i class="fa-solid fa-music" style="color:#bdc3c7; margin-right:4px;"></i> ${displayNames}</div></div>`;
                 }
             });
-            if(html === '') html = '<div style="color:#7f8c8d; text-align:center; margin-top:20px;">[ 今日无有效排程 ]</div>';
+            if (html === '') html = '<div style="color:#7f8c8d; text-align:center; margin-top:20px;">[ 今日无有效排程 ]</div>';
             document.getElementById('taskList').innerHTML = html;
+
+            // 数据加载完成后，仅启动低频的 Sys 引擎 (手机端不需要画波形图，省电省流)
+            fetchSysLoop();
         }
 
         let lastPlaylistHtml = "";
-        async function fetchStatusLoop() {
+
+        // 手机端因为不需要绘制波形图，直接采用 500ms 的 Sys 通道，非常省电
+        async function fetchSysLoop() {
             try {
-                const res = await fetch('/api/status'); 
+                const res = await fetch('/api/sys');
                 const status = await res.json();
-                
+
                 document.getElementById('sysStats').innerHTML = `CPU: ${status.sys_stats.cpu.toFixed(1)}%<br>RAM: ${status.sys_stats.ram.toFixed(1)}%`;
 
                 const sText = document.getElementById('statusText');
@@ -382,7 +617,7 @@
                 if (status.manual_player) {
                     let mp = status.manual_player;
                     let playBtn = document.getElementById('mpPlayBtn');
-                    
+
                     if (mp.status === 'playing') {
                         playBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
                         playBtn.className = 'btn-ctrl btn-play paused';
@@ -391,6 +626,11 @@
                         playBtn.innerHTML = '<i class="fa-solid fa-play" style="margin-left:5px;"></i>';
                         playBtn.className = 'btn-ctrl btn-play';
                         playBtn.onclick = () => manualCmd('play');
+                    }
+
+                    if (mp.volume !== undefined && document.activeElement !== mpVolBar) {
+                        mpVolBar.value = mp.volume;
+                        document.getElementById('mpVolumeLabel').innerText = mp.volume + '%';
                     }
 
                     let progContainer = document.getElementById('mpProgressContainer');
@@ -414,11 +654,11 @@
                         mp.queue.forEach((item, i) => {
                             let actClass = (i === mp.current_index && mp.status !== 'stopped') ? 'active' : '';
                             plHtml += `
-                                <div class="play-item ${actClass}">
-                                    <div class="play-item-title" onclick="manualCmd('play_idx', ${i})"><i class="fa-solid fa-file-audio" style="margin-right:8px; opacity:0.8;"></i> ${item.name}</div>
-                                    <button class="rm-btn" onclick="manualCmd('remove', ${i})" title="移除"><i class="fa-solid fa-xmark"></i></button>
-                                </div>
-                            `;
+                                    <div class="play-item ${actClass}">
+                                        <div class="play-item-title" onclick="manualCmd('play_idx', ${i})"><i class="fa-solid fa-file-audio" style="margin-right:8px; opacity:0.8;"></i> ${item.name}</div>
+                                        <button class="rm-btn" onclick="manualCmd('remove', ${i})" title="移除"><i class="fa-solid fa-xmark"></i></button>
+                                    </div>
+                                `;
                         });
                     }
                     if (lastPlaylistHtml !== plHtml) {
@@ -426,12 +666,11 @@
                         lastPlaylistHtml = plHtml;
                     }
                 }
-            } catch (e) {}
-            setTimeout(fetchStatusLoop, 500); 
+            } catch (e) { }
+            setTimeout(fetchSysLoop, 500); // 手机端保持 500ms 刷新即可
         }
 
         fetchInitData();
-        fetchStatusLoop();
     </script>
 </body>
 </html>
